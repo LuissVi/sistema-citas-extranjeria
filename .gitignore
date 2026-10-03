@@ -1,0 +1,28 @@
+# Dependencias
+node_modules/
+
+# Base de datos
+sqlite.db
+sqlite.db-journal
+sqlite.db-wal
+sqlite.db-shm
+
+# Entorno y secretos
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Tests
+coverage/
