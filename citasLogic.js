@@ -16,10 +16,16 @@ export function obtenerProvincias() {
 
 
 //2. OBTENER OFICINAS POR PROVINCIA
-
+//asumimos que oficinaId existe; el llamador debe validar antes
 export function obtenerOficinasPorProvincia(provincia) {
     const filas = db.prepare('SELECT id, nombre, direccion FROM oficinas WHERE provincia=? ORDER BY nombre ASC').all(provincia);
     return filas;
+}
+
+//funcion para validar la oficina
+export function validarOficina(id) {
+    const oficina = db.prepare('SELECT id FROM oficinas WHERE id=?').get(id);
+    return oficina;
 }
 
 //3. OBTENER TRAMITES
@@ -61,10 +67,11 @@ export const esDiaLaborable = (fecha) => {
 }
 
 //parametro fechaInicio; util si se desea hacer cambios futuros como seleccion de fechas
+//asumimos que oficinaId existe; el llamador debe validar antes
 export function obtenerPrimeraDisponibilidad(oficinaId, fechaInicio) {
     //antes de nada comprobamos si la oficina existe
-    const oficina = db.prepare('SELECT id FROM oficinas WHERE id=?').get(oficinaId);
-    if (!oficina) return { ok: false, codigo: 'OFICINA_INEXISTENTE', motivo: 'No se encontró la oficina' };
+    // const oficina = db.prepare('SELECT id FROM oficinas WHERE id=?').get(oficinaId);
+    // if (!oficina) return { ok: false, codigo: 'OFICINA_INEXISTENTE', motivo: 'No se encontró la oficina' };
 
     if (!fechaInicio) {
         fechaInicio = fechaDeManiana();
@@ -87,7 +94,8 @@ export function obtenerPrimeraDisponibilidad(oficinaId, fechaInicio) {
 //CONSULTA DE CITA Y RESERVA DE CITAS
 export function consultarCitaPorNie(nie) {
     const citaUsuario = db.prepare(`SELECT 
-        citas.id, citas.fecha_hora, 
+        citas.id, 
+        citas.fecha_hora, 
         usuarios.nombre_apellidos, 
         tramites.nombre AS tramite, 
         oficinas.nombre AS oficina, 
@@ -116,10 +124,10 @@ export function horaValida(hora) {
     return true;
 }
 
-export function reservarCita(oficinaId, tramiteId, fecha, hora, { nroNie, nombre, pais }) {
+export function reservarCita(oficinaId, tramiteId, fecha, hora, { nie, nombre, pais }) {
 
-    //validar oficina
-    const oficina = db.prepare('SELECT id FROM oficinas WHERE id=?').get(oficinaId);
+    //validar si oficina existe en la DB
+    const oficina = validarOficina(oficinaId);
     if (!oficina) return { ok: false, codigo: 'OFICINA_INEXISTENTE', motivo: 'No se encontró la oficina' };
 
 
@@ -150,7 +158,7 @@ export function reservarCita(oficinaId, tramiteId, fecha, hora, { nroNie, nombre
         }
 
         //Buscar usuario
-        const usuarioExistente = db.prepare('SELECT id FROM usuarios WHERE doc_numero = ?').get(nroNie);
+        const usuarioExistente = db.prepare('SELECT id FROM usuarios WHERE doc_numero = ?').get(nie);
         let usuarioId;
         //  Si existe y tiene cita → lanzar excepción         
         if (usuarioExistente) {
@@ -162,7 +170,7 @@ export function reservarCita(oficinaId, tramiteId, fecha, hora, { nroNie, nombre
             usuarioId = usuarioExistente.id;
             // Si no existe → INSERT usuarios
         } else {
-            const newUser = db.prepare('INSERT INTO usuarios (doc_numero, nombre_apellidos, pais_nacionalidad) VALUES(?, ?, ?)').run(nroNie, nombre, pais);
+            const newUser = db.prepare('INSERT INTO usuarios (doc_numero, nombre_apellidos, pais_nacionalidad) VALUES(?, ?, ?)').run(nie, nombre, pais);
             usuarioId = newUser.lastInsertRowid;
         }
 
@@ -175,6 +183,7 @@ export function reservarCita(oficinaId, tramiteId, fecha, hora, { nroNie, nombre
         const citaId = reservar();
         return { ok: true, citaId };
     } catch (err) {
+        
         if (err.message === 'SLOT_OCUPADO') return { ok: false, codigo: 'SLOT_OCUPADO', motivo: 'La fecha no está disponible.' };
 
         if (err.message === 'YA_TIENE_CITA') return { ok: false, codigo: 'YA_TIENE_CITA', motivo: 'Ya tienes una cita activa.' };
@@ -189,7 +198,12 @@ export function reservarCita(oficinaId, tramiteId, fecha, hora, { nroNie, nombre
             }
         }
 
-        throw err;
+        // TODO (Fase 2): cubrir 'usuarios.doc_numero' duplicado en race
+        // condition (dos peticiones simultáneas con NIE nuevo). Es un caso
+        // extremadamente raro: solo ocurre cuando el usuario no existe y
+        // dos peticiones lo crean a la vez. Hoy se relanza como 500.
+
+        throw err; //relanza error desconocido
     }
 }
 
@@ -204,9 +218,11 @@ export function limpiarCitasPasadas() {
     const fechaString = formatearFecha(new Date());
     const fechaHoraString = `${fechaString} 00:00`;
 
-    const citasEliminadas=db.prepare('DELETE FROM citas WHERE fecha_hora < ?').run(fechaHoraString);
-    return {ok:true, filasEliminadas: citasEliminadas.changes};
+    const citasEliminadas = db.prepare('DELETE FROM citas WHERE fecha_hora < ?').run(fechaHoraString);
+    return { ok: true, filasEliminadas: citasEliminadas.changes };
 }
+
+
 
 
 

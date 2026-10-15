@@ -1,4 +1,6 @@
 //ARCHIVO DE PRUEBAS
+// sandbox.js — archivo de pruebas manuales durante el desarrollo.
+// NO es un test automatizado. Se ejecuta con `node sandbox.js`.
 import {
   obtenerProvincias,
   obtenerOficinasPorProvincia,
@@ -12,14 +14,14 @@ import {
   reservarCita,
   anularCita,
   limpiarCitasPasadas
-} from "./citas_logic.js";
+} from "./citasLogic.js";
 
-console.log('provincias:' + obtenerProvincias('Madrid'));
-console.log('oficinas Madrid:', obtenerOficinasPorProvincia('Madrid'));
+console.log('provincias:', obtenerProvincias('Madrid'));
+console.log('oficinas Madrid:', obtenerOficinasPorProvincia('madrid'));
 console.log('trámites oficina 2:', obtenerTramitesPorOficina(7));
 
 //prueba de horarios disponibles
-console.log(obtenerHorariosDisponibles(1, '2026-09-21'));
+console.log('Obtener horarios disponibles: ', obtenerHorariosDisponibles(1111, '2026-09-21'));
 
 console.log('=== 1. Primera disponibilidad oficina 1, desde 21/09/2026 ===');
 console.log(obtenerPrimeraDisponibilidad(1,'2026-09-21'));
@@ -52,8 +54,8 @@ console.log('=====verificar si es dia laborable======');
 console.log(esDiaLaborable('2026-09-26'));
 
 console.log('=====PRUEBA RESERVA DE CITA======');
-console.log(reservarCita(2,6,'2026-10-02','12:00',{nroNie:'W1234567V',nombre:'Miguel Arcangel Salas', pais:'Cuba'}));
-
+console.log(reservarCita(1,3,'2026-10-08','11:30',{nroNie:'J1234567P',nombre:'Carmen Arias Soto', pais:'Peru'}));
+console.log('===========');
 // 1. Mismo hueco otra vez → SLOT_OCUPADO
 console.log('Slot ocupado:', reservarCita(2, 6, '2026-10-02', '12:00', {
   nroNie: 'TEST002', nombre: 'Otro User', pais: 'Chile'

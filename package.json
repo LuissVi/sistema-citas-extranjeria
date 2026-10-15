@@ -2,15 +2,18 @@
   "name": "sistemacitas",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["citas", "express", "sqlite", "rest-api", "nodejs"],
+  "author": "Luis Villar",
+  "license": "MIT",
+  "description": "API REST para gestión de citas en oficinas de extranjería",
   "dependencies": {
-    "better-sqlite3": "^13.0.3"
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1"
   }
 }
